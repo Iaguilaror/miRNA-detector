@@ -1,0 +1,40 @@
+< ../config.mk
+
+all:QV: $SRR_FILE
+	bash bin/targets \
+	| xargs mk
+	
+##results/%.fastq.gz:Q:
+##	mkdir -p results/
+##	echo "[DEBUGGING]downloading $target"
+##	SRRid=$(basename $target .fastq.gz)
+##	fastq-dump -Z --readids --gzip $SRRid > $target.build && ##with -Z, output is STDOUT, one can control for incompleted files, by mv $target.build $target check
+##	mv $target.build $target
+##	
+
+results/%.fastq.gz.report:Q:	tmp/%.sra.report ##Consider changing to results/%.fastq.gz as target
+	SRR_id=$(basename $target fastq.gz.report)
+	INIT_TIME=$(date +%s)
+	mkdir -p $(dirname $target)
+	echo "[DEBUGGING]doing $target"
+	SRA_FILE=$(echo $prereq | sed "s#.report##g" )
+	$FASTQ_DUMP -O $(dirname $target) --gzip $SRA_FILE &&
+	FASTQ_DUMP_T=$(($(date +%s)-INIT_TIME)) &&
+	echo "Fastq-dump time (seconds):	$FASTQ_DUMP_T" > $target.build &&
+	echo "Fastq size (M):	$(ls -l --block-size=M results/$SRR_id.fastq.gz | cut -d" " -f5 | tr -d \"M\")" >> $target.build &&
+	mv $target.build $target
+
+tmp/%.sra.report:Q:
+	INIT_TIME=$(date +%s)
+	mkdir -p $(dirname $target)
+	SRRid=$(basename $target .sra.report)
+	shortid=$(echo $SRRid | awk '{print substr ($0, 0, 6)}' )
+	FTP_ADDRES="anonftp@ftp.ncbi.nlm.nih.gov:/sra/sra-instant/reads/ByRun/sra/SRR/$shortid/$SRRid/$SRRid.sra"
+	echo "[DEBUGGING]SRRid is $SRRid"
+	echo "[DEBUGGING]shortid is $shortid"
+	echo "[DEBUGGING]ftp address is $FTP_ADDRES"
+	$ASCP -i $ASPERA_KEY -k 1 -T -l200m $FTP_ADDRES tmp/ &&
+	SRA_DOWNLOAD_T=$(($(date +%s)-INIT_TIME)) &&
+	echo "Download time (seconds):	$SRA_DOWNLOAD_T" > $target.build &&
+	echo "SRA size (M):	$(ls -l --block-size=M tmp/$SRR_id.sra | cut -d" " -f5 | tr -d \"M\")" >> $target.build &&
+	mv $target.build $target

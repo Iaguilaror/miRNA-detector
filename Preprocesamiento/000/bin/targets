@@ -1,0 +1,7 @@
+#!/bin/bash
+
+IFILE=$(grep "^SRR_FILE=" ../config.mk | cut -d"\"" -f2)
+
+basename $IFILE .txt |\
+sed "s#^#results/#g" |\
+sed "s#\$#.stats#g"

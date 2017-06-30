@@ -1,0 +1,46 @@
+< ../config.mk
+
+all:QV: 
+	bin/targets \
+	| xargs mk
+
+results/%.stats:Q: results/%.list	##FOR METADATA DOWNLOAD, AND NECESSARY SIZE CALCULATION
+	mkdir -p tmp/SRA_infos
+	echo "[DEBUGGING]doing $target"
+	while read p
+	do
+		WGSAMPLE=$(echo $p | cut -d" " -f1)	## while read inserts lines as space-separated, regardles if they come from a tab separated file
+		echo "[DEBUGGIN]downloading $WGSAMPLE metadata"
+		DOWNLOAD_command="wget -q -N 'http://trace.ncbi.nlm.nih.gov/Traces/sra/sra.cgi?save=efetch&db=sra&rettype=runinfo&term= $WGSAMPLE'"
+		echo $DOWNLOAD_command | bash &&
+		mv *$WGSAMPLE tmp/SRA_infos/$WGSAMPLE.info.csv
+		sleep 2
+	done < $prereq &&
+	echo "ID	Size_MB" > $target.build
+	for f in tmp/SRA_infos/*.info.csv
+	do
+		WGSAMPLE=$(basename $f .info.csv)
+		echo "[DEBUGGIN]reading size in $f"
+		SIZE_COL=$(head -n1 $f | tr "," "\n" | grep -n "size_MB" | cut -d":" -f1)
+		SIZE=$(grep -w "$WGSAMPLE" $f | cut -d"," -f$SIZE_COL)
+		echo "[DEBUGGIN]size col is $SIZE_COL"
+		echo "[DEBUGGIN]size is $SIZE"
+		echo "$WGSAMPLE	$SIZE" >> $target.build
+	done &&
+	TOTAL_DOWNLOAD=$(tail -n+2 $target.build | cut -f2 | paste -sd+ | bc)
+	echo "$TOTAL_DOWNLOAD MB of space needed for SRA downloads" > results/neccesary_disk_space.txt &&
+	mv $target.build $target
+
+results/%.list:Q: $SRR_FILE	##HERE, INPUT TABLE IS FORMATED
+	mkdir -p $(dirname $target)
+	echo "[DEBUGGING]formating $prereq to $target"
+	 tr -s '\t' '\t' < $prereq \
+	 | tr " " "_" | grep "^SRR" \
+	 | sed "s#	\$##g" \
+	 | awk '
+	 BEGIN { FS="\t"; OFS="\t"; }
+	 $3=="-" || $3=="N/A" || $3=="" {print $1,$2,"N/A",$4}
+	 $4=="-" || $4=="N/A" || $4=="" {print $1,$2,$3,"N/A"}
+	 $3!="-" && $3!="N/A" && $3!="" && $4!="-" && $4!="N/A" && $4!="" {print $0}
+	 ' - > $target.build &&
+	 mv $target.build $target
