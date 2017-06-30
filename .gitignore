@@ -1,4 +1,6 @@
 input_data/*
+condor*
+*condor*
 */*/results/*
 */*/tmp/*
 */*/data/*
