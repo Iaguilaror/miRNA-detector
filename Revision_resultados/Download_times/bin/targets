@@ -1,0 +1,3 @@
+#!/bin/bash
+
+echo "results/fastq_generation_timetable.tsv"

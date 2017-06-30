@@ -1,0 +1,36 @@
+all:QV:
+	mkdir -p results/
+	mkdir -p tmp/
+	bin/targets | xargs mk
+
+results/fastq_generation_timetable.tsv:Q: tmp/completed_files.txt
+	echo "[DEBUGGING]doing $target"
+	echo "SRRid	fastq.gz_size.MB	sra_download_time.seconds	fastq_dump_time.seconds" > $target.build
+	while read p
+	do
+		SRRid=$p
+		FASTQsize=$(ls -l --block-size=MB ../../Preprocesamiento/001/results/$SRRid.fastq.gz | cut -d" " -f5 | sed "s#MB##g")
+		SRAdownloadtime=$(cut -f2 ../../Preprocesamiento/001/tmp/$SRRid.sra.report)
+		FQDUMPtime=$(cut -f2 ../../Preprocesamiento/001/results/$SRRid.fastq.gz.report)
+		#echo "[DEBUGGING]timming $SRRid generation"
+		echo "$SRRid	$FASTQsize	$SRAdownloadtime	$FQDUMPtime" >> $target.build
+	done < $prereq &&
+##insert Rscript here
+	Rscript --vanilla bin/fastq_generation_graphics.R &&
+	mv $target.build $target
+	
+tmp/completed_files.txt:Q:
+	ls ../../Preprocesamiento/001/results/*.fastq.gz.report > tmp/fastq_completed.txt
+	> tmp/fastq_ids.list
+	while read p
+	do
+		basename $p .fastq.gz.report >> tmp/fastq_ids.list
+	done < tmp/fastq_completed.txt
+	ls ../../Preprocesamiento/001/tmp/*.sra.report > tmp/sra_completed.txt
+	> tmp/sra_ids.list
+	while read p
+	do
+		basename $p .sra.report >> tmp/sra_ids.list
+	done < tmp/sra_completed.txt
+	grep -w -x -f tmp/fastq_ids.list tmp/sra_ids.list > $target.build &&
+	mv $target.build $target

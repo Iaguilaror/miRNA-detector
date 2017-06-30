@@ -1,0 +1,9 @@
+< ../config.mk
+
+all:VQ:
+	bin/targets | xargs mk
+
+results/SRRids-noCount:Q:
+	Rscript --vanilla bin/Results_count.R &&
+	grep -w -f tmp/SRAids_with_low_counts $SRR_FILE > $target.build
+	mv $target.build $target

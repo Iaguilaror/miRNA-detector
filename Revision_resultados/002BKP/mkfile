@@ -1,0 +1,35 @@
+< ../config.mk
+
+all:QV: results/for_norm_table.csv
+	echo "[DEBUGGING]doing final table"
+
+results/for_norm_table.csv:Q: results/table.csv
+	echo "[DEBUGGING]doing $target"
+	grep ",,\$" $prereq > tmp/no_data.tmp
+	grep -v ",,\$" $prereq > tmp/fastq_data.tmp
+	while read p
+	do	##DEBUGG THIS SECTION
+		SRRid=$(echo $p | cut -d"," -f1)
+		RAW_READS=$(grep -w "$SRRid" data/conteo_miRNAs_15Marzo2017-2.csv | cut -d"," -f178)
+		FILTERED_READS=$(grep -w "$SRRid" data/conteo_miRNAs_15Marzo2017-2.csv | cut -d"," -f185)
+		echo "[DEBUGGING]id is $SRRid"
+		echo "[DEBUGGING]raw reads is $RAW_READS"
+		echo "[DEBUGGING]filtered reads is $FILTERED_READS"
+		echo "$p",$RAW_READS,$FILTERED_READS | sed "s#,,##g" >> tmp/fastq_data.tmp
+	done < tmp/no_data.tmp &&
+	mv tmp/fastq_data.tmp $target
+
+results/table.csv:Q:
+	tail -n+2 data/Final_recounted.csv > tmp/rows.tmp
+	echo "$(head -n1 data/Final_recounted.csv),raw_reads_in_fastqc,filtered_reads" > tmp/table.csv
+	while read p
+	do
+	SRRid=$(echo $p | cut -d"," -f1)
+	RAW_READS=$(grep -w "$SRRid" ../../Preprocesamiento/003/results/preprocessing_summary.tsv | cut -f4)
+	FILTERED_READS=$(grep -w "$SRRid" ../../Preprocesamiento/003/results/preprocessing_summary.tsv | cut -f9)
+		echo "[DEBUGING]id is $SRRid"
+		##echo "[DEBUGGING]raw reads is $RAW_READS"
+		##echo "[DEBUGGING]filtered reads is $FILTERED_READS"
+		echo "$p,$RAW_READS,$FILTERED_READS" >> tmp/table.csv
+	done < tmp/rows.tmp &&
+	mv tmp/table.csv results/table.csv
