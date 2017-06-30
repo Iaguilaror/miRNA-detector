@@ -1,0 +1,29 @@
+< ../config.mk
+
+all:QV:
+	mkdir -p tmp/collumns
+	mkdir -p results/
+	bin/targets | xargs mk
+
+results/count_table.tsv:Q: tmp/requested_SRRid.list tmp/available_SRRid_fastas.list
+	echo "[DEBUGGING]doing $target"
+	while read p
+	do
+		echo "[DEBUGGING]pasting $p"
+		echo "" > tmp/collumns/seqs.cols
+		echo "$p" > tmp/collumns/$p.cols
+		cut -f1 data/$p.counts | grep -v "sequence_name" >> tmp/collumns/seqs.cols
+		cut -f2 data/$p.counts | grep -v "^SRR" >> tmp/collumns/$p.cols
+	done < tmp/requested_SRRid.list &&
+	paste -d "\t" $( ls -d -1 tmp/collumns/*) > $target.build &&	##COULD WORK HERE TO CHECK IF SEQUENCE NAMESIS THE SAME FOR EVEY SRRid COUNTS FILE
+	mv $target.build $target
+
+tmp/requested_SRRid.list:Q:
+	echo "[DEBUGGING]doing $target"
+	cut -f1 $SRR_FILE | grep "^SRR" > $target.build
+	mv $target.build $target
+
+tmp/available_SRRid_fastas.list:Q:
+	echo "[DEBUGGING]doing $target"
+	ls data/*.counts | sed s#data/##g | sed s#\\.counts##g > $target.build &&
+	mv $target.build $target

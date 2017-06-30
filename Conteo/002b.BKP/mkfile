@@ -1,0 +1,9 @@
+< ../config.mk
+
+all:QV:
+	bin/targets | xargs mk
+
+results/count_table.tsv:Q: bin/table_aggregator.R
+	echo "[DEBUGGING]doing $target"
+	Rscript --vanilla $prereq &&
+	mv $target.build $target

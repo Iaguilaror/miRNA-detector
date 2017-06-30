@@ -1,0 +1,15 @@
+< ../config.mk
+
+all:QV:
+	bin/targets | xargs mk
+
+results/count_table.tsv:Q:
+	for f in data/*.counts	##JUST for extracting RNA sequence names collumn
+	do
+	SRRid=$(basename $f .counts)
+		cut -f1 $f > tmp/1.sequences_collumn
+		cut -f2 $f > tmp/$SRRid
+	done
+	paste -d "\t" $( ls -d -1 tmp/*) > $target.build &&
+	mv $target.build $target
+	

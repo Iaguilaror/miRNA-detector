@@ -1,0 +1,24 @@
+< ../config.mk
+
+all:VQ:
+	bin/targets | xargs mk
+
+results/%.counts:Q: $SEQUENCES_FILE
+	mkdir -p $(dirname $target)
+	mkdir -p tmp/
+	echo "[DEBUGGING]doing $target"
+	grep -v "^>" data/fasta/$(basename $target .counts).filtered.fasta  > tmp/fasta_lines.tmp
+	cat $prereq | paste -sd ',\n' > tmp/sequences.list
+	echo "sequence_name	$(basename $target .counts)" > $target.build
+	while read p
+	do
+		SEQUENCE_NAME=$(echo $p | cut -d"," -f1 | tr -d ">" )
+		SEQUENCE=$(echo $p | cut -d"," -f2 )
+		READ_COUNT=$( grep -x -c "$SEQUENCE" tmp/fasta_lines.tmp) || true	##|| true allows to register when sequence had 0 matches. Otherwise, script ends with error code 1
+		##echo "[DEBUGGING]sequence name is $SEQUENCE_NAME"
+		##echo "[DEBUGGING]sequence is $SEQUENCE"
+		##echo "[DEBUGGING]read count is $READ_COUNT"
+		echo "$SEQUENCE_NAME	$READ_COUNT" >> $target.build
+	done < tmp/sequences.list &&
+	mv $target.build $target
+	
