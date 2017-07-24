@@ -1,0 +1,5 @@
+#!/bin/bash
+
+DATA_FILE=$(grep "^SRR_FILE=" ../config.mk | grep -v "^#" | cut -d"\"" -f2)
+
+cut -f1 data/sample.list | sed "s#^#results/#g" | sed "s#\$#.filtered.fasta#g"

@@ -6,6 +6,12 @@ SRR_FILE="/labs/crve-fabian/mirna_vaca/miRNAs-detector/mks/input_data/SRR-Final-
 
 ##Fasta Sequences to look for
 SEQUENCES_FILE="/castle/iaguilar/FABERE/miRNAs-detector/mks/input_data/noAnotadosUnicosVacas_correctedControl.fa"
+##SEQUENCES_FILE="/labs/crve-fabian/mirna_vaca/miRNAs-detector/mks/input_data/secuencias_unicas.mir_most_abundant.fa"
+##SEQUENCES_FILE="/labs/crve-fabian/mirna_vaca/miRNAs-detector/mks/input_data/bta-miRNAs-mirbase_mariana_corrected.fa"
+
+##CONTROL Sequences to look for
+NEGATIVE_SEQS="/labs/crve-fabian/mirna_vaca/miRNAs-detector/mks/input_data/controles_negativos.fa"
+##POSITIVE_SEQS=
 
 ##Variables for filtering
 ##Number of cores for Trimmomatic
@@ -19,11 +25,10 @@ ADAPTER_CUTTOF="50" ###fastqc files with a lower percentage of reads with adapte
 
 ##SEQUENCING READS VARIABLES
 MIN_LENGTH="19"
-MAX_LENGTH="999" ##needs fix
+MAX_LENGTH="999" ##needs fix to make infinite
 MIN_QUAL="30"
 
 ##PATHS to software
-##TRIMdir="/run/media/winter/Winter_HDrive_2/Programs/Trimmomatic-0.32/trimmomatic-0.32.jar"
 FASTQ_DUMP="/castle/iaguilar/dwn/bin/sratoolkit.2.8.2-1-ubuntu64/bin/fastq-dump"
 TRIMdir="/castle/iaguilar/bin/trimmomatic.jar"
 ASCP="/castle/iaguilar/.aspera/connect/bin/ascp"

@@ -5,17 +5,55 @@ all:QV:
 	mkdir -p results/
 	bin/targets | xargs mk
 
-results/count_table.tsv:Q: tmp/requested_SRRid.list tmp/available_SRRid_fastas.list
+results/count_table.%.tsv:Q:	results/count_table data/preprocessing_sumary.tsv
+	##set -x
+	echo "[DEBUGGING] doing $target"
+	Rscript bin/table_transform.R results/count_table \
+	&& tail -n+2 results/count_table.tsv.build > tmp/count_table.no_headers \
+	&& HEAD=$(head -n1 results/count_table.tsv.build) \
+	&& echo "$HEAD	Number_of_filtered_reads	Number_of_original_reads"> tmp/count_table.header \
+	&& while read p
+	do
+		SRR_ID=$(echo $p | cut -d" " -f1)
+		TOTAL_READS=$(grep "^$SRR_ID" data/preprocessing_sumary.tsv | cut -f8)
+		FILTERED_READS=$(grep "^$SRR_ID" data/preprocessing_sumary.tsv | cut -f17)
+		echo "[DEBUGGING] finding number of filtered reads for $SRR_ID"
+		##echo "[DEBUGING] filtered reads is $FILTERED_READS"
+		echo $p	$FILTERED_READS	$TOTAL_READS | tr " " "\t" >> tmp/count_table.header
+	done < tmp/count_table.no_headers \
+	&& rm results/count_table.tsv.build \
+	&& mv tmp/count_table.header $target \
+	&& echo "##TEXTO SIN ACENTOS
+##Algoritmo de búsqueda:	grep -x -c SECUENCIA_FASTA SRR_identificador
+## Se busco que las secuencias solicitadas (pej. >bta-let-7a.MIMAT0003844) tuvieran un match exacto en las lecturas de las bibliotecas SRRXXX
+###CUTADAPT VARIABLES
+##ADAPTER_CUTTOF=50 ###fastqc files with a lower percentage of reads with adapter than this value, will be considered as coming without adapters
+##SEQUENCING READS VARIABLES
+##MIN_LENGTH=19
+##MAX_LENGTH=999 ##needs fix to make infinite
+##MIN_QUAL=30
+##Secuencias fasta usadas para la busqueda:
+##$SEQUENCES_FILE" > $target.report.txt \
+	&& cat $SEQUENCES_FILE $NEGATIVE_SEQS >> $target.report.txt \
+	&& rm results/count_table
+
+results/count_table:Q: tmp/doable_SRR.list
 	echo "[DEBUGGING]doing $target"
 	while read p
 	do
 		echo "[DEBUGGING]pasting $p"
 		echo "" > tmp/collumns/seqs.cols
 		echo "$p" > tmp/collumns/$p.cols
-		cut -f1 data/$p.counts | grep -v "sequence_name" >> tmp/collumns/seqs.cols
-		cut -f2 data/$p.counts | grep -v "^SRR" >> tmp/collumns/$p.cols
-	done < tmp/requested_SRRid.list &&
+		cut -f1 data/counts/$p.counts | grep -v "sequence_name" >> tmp/collumns/seqs.cols
+		cut -f2 data/counts/$p.counts | grep -v "^SRR" >> tmp/collumns/$p.cols
+	done < tmp/doable_SRR.list &&
 	paste -d "\t" $( ls -d -1 tmp/collumns/*) > $target.build &&	##COULD WORK HERE TO CHECK IF SEQUENCE NAMESIS THE SAME FOR EVEY SRRid COUNTS FILE
+	mv $target.build $target
+
+tmp/doable_SRR.list:Q: tmp/requested_SRRid.list tmp/available_SRRid_fastas.list
+	set -x
+	echo "[DEBUGGING] doing $target"
+	grep -x -f $prereq > $target.build &&
 	mv $target.build $target
 
 tmp/requested_SRRid.list:Q:
@@ -25,5 +63,5 @@ tmp/requested_SRRid.list:Q:
 
 tmp/available_SRRid_fastas.list:Q:
 	echo "[DEBUGGING]doing $target"
-	ls data/*.counts | sed s#data/##g | sed s#\\.counts##g > $target.build &&
+	ls data/counts/*.counts | sed s#data/counts/##g | sed s#\\.counts##g > $target.build &&
 	mv $target.build $target

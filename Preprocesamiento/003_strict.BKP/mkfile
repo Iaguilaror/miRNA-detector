@@ -1,0 +1,69 @@
+< ../config.mk
+
+all:QV: bin/targets
+	bin/targets | xargs mk
+
+results/preprocessing_summary:Q:
+	mkdir -p results/
+	mkdir -p tmp/
+	echo "[DEBUGGING]doing $target"
+	echo "SRR_id	sra_file_size.MB	sra_download_time.SEC	fastq_gz_size.MB	fastq-dump_time.SEC	fastq_slice_size.READS	adapter_percentage_in_slice	original_reads	cutadapt_reads	uncutadapt_reads	adapter_percentage_in_total_reads	cutadapt_time.SEC	trimmed_reads	untrimmed_reads	trimming_time.SEC	unminimized_reads	minimized_reads	minimizing_time.SEC	fasta_conversion_time.SEC	intermediate_files_size" > $target.build
+	grep "^SRR" $SRR_FILE | cut -f1 > tmp/SRRid.list
+	while read p
+	do
+		SRR_id=$p
+		SRA_SIZE="FAILED_DOWNLOAD"
+		SRA_DOWNLOAD_TIME="NA"
+		FASTQ_GZ_SIZE="NA"
+		FASTQ_DUMP_TIME="NA"
+		FASTQ_SLICE_SIZE="NA"
+		ADAPTER_IN_SLICE="NA"
+		ORIGINAL_LINES="NA"
+		CUTADAPT_LINES="NA"
+		UNCUTADAPT_LINES="NA"
+		ADAPTER_IN_ORIGINAL="NA"
+		CUTADAPT_TIME="NA"
+		TRIMMED_LINES="NA"
+		UNTRIMMED_LINES="NA"
+		TRIMMING_TIME="NA"
+		UNMINIMIZED_LINES="NA"
+		MINIMIZED_LINES="NA"
+		MINIMIZING_TIME="NA"
+		FASTA_CONVERSION_TIME="NA"
+		INTERMEDIATES_SIZE="NA"
+		echo "[DEBUGGING]summarizing preprocessing for $SRR_id"
+		if [ -f ../001/tmp/$SRR_id.sra.report ]; then	##CHANGE TO CHECK FOR .SRA FILE
+			SRA_SIZE=$(ls -l --block-size=M ../001/tmp/$SRR_id.sra | cut -d" " -f5 | tr -d "M")	##muste be integrated in a report... download, maybe...
+			if [ -f ../002_strict/results/$SRR_id.filtered.fasta ];then
+			SRA_DOWNLOAD_TIME=$(cut -f2 ../001/tmp/$SRR_id.sra.report)
+			FASTQ_GZ_SIZE=$(ls -l --block-size=M ../001/results/$SRR_id.fastq.gz | cut -d" " -f5 | tr -d "M") ##must be integrated in a report... download, maybe...
+			FASTQ_DUMP_TIME=$(cut -f2 ../001/results/$SRR_id.fastq.gz.report)
+			FASTQ_SLICE_SIZE=$(($SURVEY_LINES/ 4))
+			ADAPTER_IN_SLICE=$(grep "Reads with adapters:" ../002_strict/tmp/cut_survey/$SRR_id.report | cut -d"(" -f2 | sed s/%.\$//g )
+			ORIGINAL_LINES=$(grep -w "Total reads processed:" ../002_strict/tmp/cutadapt/$SRR_id.cutadapt.fastq.gz.report | tr -s " " | cut -d " " -f4- | tr -d ",")
+			CUTADAPT_LINES=$(grep -w "Reads with adapters:" ../002_strict/tmp/cutadapt/$SRR_id.cutadapt.fastq.gz.report | tr -s " " | cut -d " " -f4 | tr -d ",")
+			UNCUTADAPT_LINES=$(( $ORIGINAL_LINES - $CUTADAPT_LINES))
+			##TEMPORAL FIX	ADD A wc -l file check,files with 3 lines means no adapter was found beyond the threshold
+			##CORRECT FIX REQUIERES TEMPERING IN 002x/mkfile, for artificial reporting of cutdapt.reports for files without significant adapter content -addding (NA)
+			LINES_IN_CUTADAPT_REPORT=$(wc -l ../002_strict/tmp/cutadapt/$SRR_id.cutadapt.fastq.gz.report | cut -d" " -f1 )
+			if [ $LINES_IN_CUTADAPT_REPORT -ne 3 ]; then
+				ADAPTER_IN_ORIGINAL=$(grep "Reads with adapters:" ../002_strict/tmp/cutadapt/$SRR_id.cutadapt.fastq.gz.report | cut -d"(" -f2 | sed s/%.\$//g )
+			fi
+			CUTADAPT_TIME=$(grep "Process time:" ../002_strict/tmp/cutadapt/$SRR_id.cutadapt.fastq.gz.report | cut -f2)
+			TRIMMED_LINES=$(grep -w "Total reads processed:" ../002_strict/tmp/minimized/$SRR_id.minimized.fastqc.report | tr -s " " | cut -d " " -f4 | tr -d ",")
+			UNTRIMMED_LINES=$(( $CUTADAPT_LINES - $TRIMMED_LINES ))
+			TRIMMING_TIME=$(grep "Processing time:" ../002_strict/tmp/trimmomatic/$SRR_id.trimmo.fastq.gz.report | cut -f2)
+			UNMINIMIZED_LINES=$(grep -w "Reads that were too long:" ../002_strict/tmp/minimized/$SRR_id.minimized.fastqc.report | tr -s " " | cut -d " " -f6 | tr -d ",")
+			MINIMIZED_LINES=$(( $TRIMMED_LINES - $UNMINIMIZED_LINES ))
+			MINIMIZING_TIME=$(grep "Process time:" ../002_strict/tmp/minimized/$SRR_id.minimized.fastqc.report | cut -f2)
+			FASTA_CONVERSION_TIME=$(grep "Process time:" ../002_strict/results/$SRR_id.filtered.fasta.report  | cut -f2)
+			##TEMPORARY FIX, calculate size for cutadap file, trimmomatic file, minimized file, and fasta file
+			##INTEGRATE IN FASTA GENERATION REPORT at ../002_strict/results/$SRR_id.filtered.fasta.report
+			INTERMEDIATES_SIZE=$(ls -l --block-size=M ../002_strict/tmp/cutadapt/$SRR_id.cutadapt.fastq.gz ../002_strict/tmp/trimmomatic/$SRR_id.trimmo.fastq.gz ../002_strict/tmp/minimized/$SRR_id.minimized.fastqc ../002_strict/results/SRR1202346.filtered.fasta | tr -s " " |cut -d" " -f5 | tr -d "M" | paste -s -d+ | bc)
+			fi
+		else
+			echo "[WARNING] $SRR_id was not downloaded succesfully. Skipping preprocessing summarization"
+		fi
+		echo "$SRR_id	$SRA_SIZE	$SRA_DOWNLOAD_TIME	$FASTQ_GZ_SIZE	$FASTQ_DUMP_TIME	$FASTQ_SLICE_SIZE	$ADAPTER_IN_SLICE	$ORIGINAL_LINES	$CUTADAPT_LINES	$UNCUTADAPT_LINES	$ADAPTER_IN_ORIGINAL	$CUTADAPT_TIME	$TRIMMED_LINES	$UNTRIMMED_LINES	$TRIMMING_TIME	$UNMINIMIZED_LINES	$MINIMIZED_LINES	$MINIMIZING_TIME	$FASTA_CONVERSION_TIME	$INTERMEDIATES_SIZE" >> $target.build
+	done < tmp/SRRid.list &&
+	mv $target.build $target.tsv

@@ -7,7 +7,7 @@ results/%.counts:Q: tmp/%.fasta_lines.tmp
 	mkdir -p $(dirname $target)
 	SRR_id=$(basename $target .counts )
 	echo "[DEBUGGING]doing $target"
-	cat $SEQUENCES_FILE | paste -sd ',\n' > tmp/$SRR_id.sequences.list
+	cat $SEQUENCES_FILE $NEGATIVE_SEQS | paste -sd ',\n' > tmp/$SRR_id.sequences.list ##Esto se tiene que pasar a su propio bloque mk, para evitar que diferents jobs escriban sobre el mismo archivo
 	echo "sequence_name	$(basename $target .counts)" > $target.build
 	while read p
 	do

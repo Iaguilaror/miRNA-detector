@@ -1,0 +1,3 @@
+#!/bin/bash
+
+cut -f1 data/sample.list | sed "s#^#results/#g" | sed "s#\$#.filtered.fasta#g"

@@ -1,0 +1,5 @@
+#!/bin/bash
+
+source ../config.mk
+
+cut -f1 $SRR_FILE | tail -n+2 | sed -e "s#^#results/#g" -e "s#\$#.counts#g"
