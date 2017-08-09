@@ -1,67 +1,67 @@
 < ../config.mk
 
 all:QV:
-	mkdir -p tmp/collumns
-	mkdir -p results/
+##	mkdir -p tmp/collumns
+##	mkdir -p results/
 	bin/targets | xargs mk
 
-results/count_table.%.tsv:Q:	results/count_table data/preprocessing_sumary.tsv
+results/%.count_table.REPORT.txt:Q: results/%.count_table.tsv
+	echo "[DEBUGGING] doing $target"
+##	echo "###TEXTO SIN ACENTOS###
+##	#Algoritmo de busqueda:	grep -x -c "SECUENCIA_FASTA" SRR_identificador
+##	# Se busco que las secuencias solicitadas (pej. >bta-let-7a.MIMAT0003844) tuvieran un match exacto en las lecturas de las bibliotecas SRRXXX
+##	#Parametros de ejecucion
+##	$(cat ../config.mk | grep -v "##")
+##	#=#
+##	#==Secuencias fasta que se buscaron==#
+##	$(cat $SEQUENCES_FILE $NEGATIVE_SEQS)" > $target.build \
+##	&& mv $target.build $target
+
+results/%.count_table.tsv:Q:	##data/summary_tables/%.preprocessing_summary.tsv results/%.$SEQS.count_table.unformatted
 	##set -x
 	echo "[DEBUGGING] doing $target"
-	Rscript bin/table_transform.R results/count_table \
-	&& tail -n+2 results/count_table.tsv.build > tmp/count_table.no_headers \
-	&& HEAD=$(head -n1 results/count_table.tsv.build) \
-	&& echo "$HEAD	Number_of_filtered_reads	Number_of_original_reads"> tmp/count_table.header \
-	&& while read p
-	do
-		SRR_ID=$(echo $p | cut -d" " -f1)
-		TOTAL_READS=$(grep "^$SRR_ID" data/preprocessing_sumary.tsv | cut -f8)
-		FILTERED_READS=$(grep "^$SRR_ID" data/preprocessing_sumary.tsv | cut -f17)
-		echo "[DEBUGGING] finding number of filtered reads for $SRR_ID"
-		##echo "[DEBUGING] filtered reads is $FILTERED_READS"
-		echo $p	$FILTERED_READS	$TOTAL_READS | tr " " "\t" >> tmp/count_table.header
-	done < tmp/count_table.no_headers \
-	&& rm results/count_table.tsv.build \
-	&& mv tmp/count_table.header $target \
-	&& echo "##TEXTO SIN ACENTOS
-##Algoritmo de búsqueda:	grep -x -c SECUENCIA_FASTA SRR_identificador
-## Se busco que las secuencias solicitadas (pej. >bta-let-7a.MIMAT0003844) tuvieran un match exacto en las lecturas de las bibliotecas SRRXXX
-###CUTADAPT VARIABLES
-##ADAPTER_CUTTOF=50 ###fastqc files with a lower percentage of reads with adapter than this value, will be considered as coming without adapters
-##SEQUENCING READS VARIABLES
-##MIN_LENGTH=19
-##MAX_LENGTH=999 ##needs fix to make infinite
-##MIN_QUAL=30
-##Secuencias fasta usadas para la busqueda:
-##$SEQUENCES_FILE" > $target.report.txt \
-	&& cat $SEQUENCES_FILE $NEGATIVE_SEQS >> $target.report.txt \
-	&& rm results/count_table
+##	Rscript bin/table_transform.R results/$stem.$SEQS.count_table.unformatted \
+##	&& tail -n+2 results/$stem.$SEQS.count_table.unformatted.tsv.build > tmp/$stem.$SEQS.count_table.no_headers \
+##	&& HEAD=$(head -n1 results/$stem.$SEQS.count_table.unformatted.tsv.build) \
+##	&& echo "$HEAD	Number_of_filtered_reads	Number_of_original_reads"> tmp/$stem.$SEQS.count_table.header \
+##	&& while read p
+##	do
+##		SRR_ID=$(echo $p | cut -d" " -f1)
+##		TOTAL_READS=$(grep "^$SRR_ID" data/summary_tables/$stem.preprocessing_summary.tsv | cut -f8)
+##		FILTERED_READS=$(grep "^$SRR_ID" data/summary_tables/$stem.preprocessing_summary.tsv | cut -f17)
+##		echo "[DEBUGGING] finding number of filtered reads for $SRR_ID"
+##		##echo "[DEBUGING] filtered reads is $FILTERED_READS"
+##		echo $p	$FILTERED_READS	$TOTAL_READS | tr " " "\t" >> tmp/$stem.$SEQS.count_table.header
+##	done < tmp/$stem.$SEQS.count_table.no_headers \
+##	&& mv tmp/$stem.$SEQS.count_table.header $target \
+##	&& rm results/$stem.$SEQS.count_table.unformatted* tmp/$stem.$SEQS.*
 
-results/count_table:Q: tmp/doable_SRR.list
+results/%.$SEQS.count_table.unformatted:Q: results/%.$SEQS.counted_SRR.list
+	mkdir -p `dirname $target`
+	mkdir -p tmp/collumns
 	echo "[DEBUGGING]doing $target"
-	while read p
-	do
-		echo "[DEBUGGING]pasting $p"
-		echo "" > tmp/collumns/seqs.cols
-		echo "$p" > tmp/collumns/$p.cols
-		cut -f1 data/counts/$p.counts | grep -v "sequence_name" >> tmp/collumns/seqs.cols
-		cut -f2 data/counts/$p.counts | grep -v "^SRR" >> tmp/collumns/$p.cols
-	done < tmp/doable_SRR.list &&
-	paste -d "\t" $( ls -d -1 tmp/collumns/*) > $target.build &&	##COULD WORK HERE TO CHECK IF SEQUENCE NAMESIS THE SAME FOR EVEY SRRid COUNTS FILE
-	mv $target.build $target
+##	while read p
+##	do
+##		echo "[DEBUGGING]pasting $p"
+##		cut -f1 data/counts/$stem/$p.counts | sed "s#sequence_name##g" > tmp/collumns/$stem.$SEQS.seqs.cols
+##		cut -f2 data/counts/$stem/$p.counts > tmp/collumns/$stem.$SEQS.$p.cols
+##	done < $prereq \
+##	&& paste -d "\t" $( ls -d -1 tmp/collumns/$stem.$SEQS.*.cols) > $target.build \
+##	&& mv $target.build $target \
+##	&& rm $prereq \
+##	&& rm tmp/collumns/$stem.$SEQS.*.cols
 
-tmp/doable_SRR.list:Q: tmp/requested_SRRid.list tmp/available_SRRid_fastas.list
-	set -x
+results/%.$SEQS.counted_SRR.list:Q: results/%.$SEQS.available_SRRid_fastas.list
+##	set -x
+	mkdir -p `dirname $target`
 	echo "[DEBUGGING] doing $target"
-	grep -x -f $prereq > $target.build &&
-	mv $target.build $target
+##	cut -f1 $SRR_FILE | grep "^SRR" \
+##	| grep -x -f - $prereq > $target.build &&
+##	mv $target.build $target \
+##	&& rm $prereq
 
-tmp/requested_SRRid.list:Q:
+results/%.$SEQS.available_SRRid_fastas.list:Q: data/counts/%
+	mkdir -p `dirname $target`
 	echo "[DEBUGGING]doing $target"
-	cut -f1 $SRR_FILE | grep "^SRR" > $target.build
-	mv $target.build $target
-
-tmp/available_SRRid_fastas.list:Q:
-	echo "[DEBUGGING]doing $target"
-	ls data/counts/*.counts | sed s#data/counts/##g | sed s#\\.counts##g > $target.build &&
-	mv $target.build $target
+##	find -L $prereq -type f -name "*.counts" -exec basename {} \; | sed "s#\\.counts##g" > $target.build \
+##	&& mv $target.build $target

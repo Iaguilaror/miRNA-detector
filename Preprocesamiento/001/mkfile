@@ -13,16 +13,16 @@ all:QV: $SRR_FILE
 ##	
 
 results/%.fastq.gz.report:Q:	tmp/%.sra.report ##Consider changing to results/%.fastq.gz as target
-	SRR_id=$(basename $target fastq.gz.report)
+	SRRid=$(basename $target .fastq.gz.report)
 	INIT_TIME=$(date +%s)
 	mkdir -p $(dirname $target)
 	echo "[DEBUGGING]doing $target"
 	SRA_FILE=$(echo $prereq | sed "s#.report##g" )
-	$FASTQ_DUMP -O $(dirname $target) --gzip $SRA_FILE &&
-	FASTQ_DUMP_T=$(($(date +%s)-INIT_TIME)) &&
-	echo "Fastq-dump time (seconds):	$FASTQ_DUMP_T" > $target.build &&
-	echo "Fastq size (M):	$(ls -l --block-size=M results/$SRR_id.fastq.gz | cut -d" " -f5 | tr -d \"M\")" >> $target.build &&
-	mv $target.build $target
+      $FASTQ_DUMP -O $(dirname $target) --gzip $SRA_FILE \
+	&& FASTQ_DUMP_T=$(($(date +%s)-INIT_TIME)) \
+	&& echo "Fastq-dump time (seconds):	$FASTQ_DUMP_T" > $target.build \
+	&& echo "Fastq size (M):	$(ls -l --block-size=M results/$SRRid.fastq.gz | cut -d" " -f5 | tr -d \"M\")" >> $target.build \
+	&& mv $target.build $target
 
 tmp/%.sra.report:Q:
 	INIT_TIME=$(date +%s)
@@ -33,8 +33,8 @@ tmp/%.sra.report:Q:
 	echo "[DEBUGGING]SRRid is $SRRid"
 	echo "[DEBUGGING]shortid is $shortid"
 	echo "[DEBUGGING]ftp address is $FTP_ADDRES"
-	$ASCP -i $ASPERA_KEY -k 1 -T -l200m $FTP_ADDRES tmp/ &&
-	SRA_DOWNLOAD_T=$(($(date +%s)-INIT_TIME)) &&
-	echo "Download time (seconds):	$SRA_DOWNLOAD_T" > $target.build &&
-	echo "SRA size (M):	$(ls -l --block-size=M tmp/$SRR_id.sra | cut -d" " -f5 | tr -d \"M\")" >> $target.build &&
-	mv $target.build $target
+	$ASCP -i $ASPERA_KEY -k 1 -T -l200m $FTP_ADDRES tmp/ \
+	&& SRA_DOWNLOAD_T=$(($(date +%s)-INIT_TIME)) \
+	&& echo "Download time (seconds):	$SRA_DOWNLOAD_T" > $target.build \
+	&& echo "SRA size (M):	$(ls -l --block-size=M tmp/$SRRid.sra | cut -d" " -f5 | tr -d \"M\")" >> $target.build \
+	&& mv $target.build $target

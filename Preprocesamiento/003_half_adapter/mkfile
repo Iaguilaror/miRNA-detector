@@ -3,12 +3,12 @@
 all:QV: bin/targets
 	bin/targets | xargs mk
 
-results/preprocessing_summary:Q: data/samples.stats
+results/%.preprocessing_summary.tsv:Q: ../000/results/%.stats
 	mkdir -p results/
 	mkdir -p tmp/
 	echo "[DEBUGGING]doing $target"
 	echo "SRR_id	sra_file_size.MB	sra_download_time.SEC	fastq_gz_size.MB	fastq-dump_time.SEC	fastq_slice_size.READS	adapter_percentage_in_slice	original_reads	cutadapt_reads	uncutadapt_reads	adapter_percentage_in_total_reads	cutadapt_time.SEC	trimmed_reads	untrimmed_reads	trimming_time.SEC	unminimized_reads	minimized_reads	minimizing_time.SEC	fasta_conversion_time.SEC	intermediate_files_size.MB	filtered_fasta_size.MB" > $target.build
-	grep "^SRR" $SRR_FILE | cut -f1 > tmp/SRRid.list
+	grep "^SRR" $SRR_FILE | cut -f1 > tmp/$stem.SRRid.list
 	while read p
 	do
 		SRR_id=$p
@@ -79,8 +79,8 @@ results/preprocessing_summary:Q: data/samples.stats
 			echo "[WARNING] $SRR_id.sra was not downloaded succesfully. Skipping preprocessing summarization"
 		fi
 		echo "$SRR_id	$SRA_SIZE	$SRA_DOWNLOAD_TIME	$FASTQ_GZ_SIZE	$FASTQ_DUMP_TIME	$FASTQ_SLICE_SIZE	$ADAPTER_IN_SLICE	$ORIGINAL_LINES	$CUTADAPT_LINES	$UNCUTADAPT_LINES	$ADAPTER_IN_ORIGINAL	$CUTADAPT_TIME	$TRIMMED_LINES	$UNTRIMMED_LINES	$TRIMMING_TIME	$UNMINIMIZED_LINES	$MINIMIZED_LINES	$MINIMIZING_TIME	$FASTA_CONVERSION_TIME	$INTERMEDIATES_SIZE	$FILTERED_FASTA_SIZE" >> $target.build
-	done < tmp/SRRid.list &&
-	mv $target.build $target.tsv
+	done < tmp/$stem.SRRid.list &&
+	mv $target.build $target
 
 status_report:QV:
 	DATE=`date +%Yy-%mm-%dd.%Hh.%Mm.%Ss`

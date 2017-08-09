@@ -1,0 +1,7 @@
+< ../config.mk
+
+results/%.fasta_lines:Q: data/%.filtered.fasta
+	mkdir -p `dirname $target`
+        echo "[DEBUGGING]doing $target"
+        grep -v "^>" $prereq > $target.build \
+	&& mv $target.build $target

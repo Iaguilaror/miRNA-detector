@@ -1,0 +1,7 @@
+#!/bin/bash
+
+find -L data \
+-type f \
+-name "*.filtered.fasta" \
+| sed -e "s#data/#results/#g" \
+-e "s#.filtered.fasta#.fasta_lines#g"

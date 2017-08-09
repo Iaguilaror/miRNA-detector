@@ -30,7 +30,7 @@ tmp/trimmomatic/%.trimmo.fastq.gz:Q: tmp/cutadapt/%.cutadapt.fastq.gz
 	mkdir -p $(dirname $target)
 	echo "[DEBUGGING]trimmomatic working for $target"
 	INIT_TIME=$(date +%s)
-	java -jar $TRIMdir SE -threads $T_CORES $prereq $target.build SLIDINGWINDOW:5:$MIN_QUAL MINLEN:$MIN_LENGTH &&
+	java -jar $TRIMdir SE -threads $T_CORES -phred33 $prereq $target.build SLIDINGWINDOW:5:$MIN_QUAL MINLEN:$MIN_LENGTH &&
 	gzip -f -1 $target.build &&
 	TRIMMO_T=$(($(date +%s)-INIT_TIME)) &&
 	echo "Processing time:	$TRIMMO_T" > $target.report &&
@@ -78,11 +78,11 @@ tmp/cut_survey/%.report:Q: tmp/slices/%.fastq.gz
 	SRRid=$(basename $target .report)
 	echo "[DEBUGGING]Looking for adapters in $SRRid"
 	echo "[DEBUGGING]cutadapt surveying $SRRid"
-	 ADAP_3=$(grep -w "^$SRRid" data/sample.list | cut -f4)
-	 ADP_LENGTH=${#ADAP_3}
-	 echo "[DEBUGGING]$ADAP_3 length is $ADP_LENGTH"
-	 cutadapt --match-read-wildcards --no-indels --overlap=$((ADP_LENGTH/2)) -a $ADAP_3 -o /dev/null $prereq > $target.build &&
-	 mv $target.build $target
+	ADAP_3=$(grep -w "^$SRRid" data/sample.list | cut -f4)
+	ADP_LENGTH=${#ADAP_3}
+	echo "[DEBUGGING]$ADAP_3 length is $ADP_LENGTH"
+	cutadapt --match-read-wildcards --no-indels --overlap=$((ADP_LENGTH/2)) -a $ADAP_3 -o /dev/null $prereq > $target.build &&
+	mv $target.build $target
 
 tmp/slices/%.fastq.gz:Q: data/fastq/%.fastq.gz		##CONSIDER REMOVING THIS IF RUNNING IN INMEGEN CLUSTER
 	mkdir -p $(dirname $target)

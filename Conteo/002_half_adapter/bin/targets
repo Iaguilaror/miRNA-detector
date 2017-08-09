@@ -1,5 +1,7 @@
 #!/bin/bash
 
-DATE=$(date +%Yy_%mm_%dd_%H%M%S)
+find -L data/counts/* \
+-type d \
+| sed -e "s#data/counts/#results/#g" \
+-e "s#\$#.count_table.REPORT.txt#g"
 
-echo "results/count_table.$DATE.tsv"

@@ -1,7 +1,9 @@
 #!/bin/bash
 
-DATA_FILE=$(grep "^SRR_FILE=" ../config.mk | grep -v "^#" | cut -d"\"" -f2)
+##DATA_FILE=$(grep "^SRR_FILE=" ../config.mk | grep -v "^#" | cut -d"\"" -f2)
 
-tail -n+2 $DATA_FILE | grep -v "^	" | cut -f1 |\
-sed "s#^#results/#g" |\
-sed "s#\$#.fastq.gz.report#g"
+source ../config.mk
+
+tail -n+2 $SRR_FILE | grep "^SRR" | cut -f1 \
+| sed -e "s#^#results/#g" \
+-e "s#\$#.fastq.gz.report#g"

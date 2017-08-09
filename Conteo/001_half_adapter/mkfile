@@ -1,28 +1,25 @@
 < ../config.mk
 
+BATCH=`basename $SRR_FILE .txt`
+SEQS=`basename $SEQUENCES_FILE`
+
 all:VQ:
 	bin/targets | xargs mk
 
-results/%.counts:Q: tmp/%.fasta_lines.tmp
+results/$BATCH.$SEQS/%.counts:Q: data/%.fasta_lines
 	mkdir -p $(dirname $target)
-	SRR_id=$(basename $target .counts )
 	echo "[DEBUGGING]doing $target"
-	cat $SEQUENCES_FILE $NEGATIVE_SEQS | paste -sd ',\n' > tmp/$SRR_id.sequences.list ##Esto se tiene que pasar a su propio bloque mk, para evitar que diferents jobs escriban sobre el mismo archivo
-	echo "sequence_name	$(basename $target .counts)" > $target.build
+	cat $SEQUENCES_FILE $NEGATIVE_SEQS \
+	| paste -sd ',\n' > $(dirname $target)/$stem.sequences.list ##Esto se tiene que pasar a su propio bloque mk, para evitar que diferents jobs escriban sobre el mismo archivo ##Se resuelve con el nuevo bin/targets que opera sobre carpetas, no sobre archivos
+	echo "sequence_name	$stem" > $target.build
 	while read p
 	do
 		SEQUENCE_NAME=$(echo $p | cut -d"," -f1 | tr -d ">" )
 		SEQUENCE=$(echo $p | cut -d"," -f2 )
-		READ_COUNT=$( grep -x -c "$SEQUENCE" $prereq ) || true ##|| true allows to register when sequence had 0 matches. Otherwise, script ends with error code 1
+		READ_COUNT=$( grep -x -c "$SEQUENCE" $prereq ) || true ##"|| true" allows to register when sequence had 0 matches. Otherwise, script ends with error code 1
 		##echo "[DEBUGGING]sequence name is $SEQUENCE_NAME"
 		##echo "[DEBUGGING]sequence is $SEQUENCE"
 		##echo "[DEBUGGING]read count is $READ_COUNT"
 		echo "$SEQUENCE_NAME	$READ_COUNT" >> $target.build
-	done < tmp/$SRR_id.sequences.list &&
-	mv $target.build $target
-
-tmp/%.fasta_lines.tmp:Q: $SEQUENCES_FILE
-	mkdir -p tmp/
-	echo "[DEBUGGING]doing $target"
-	grep -v "^>" data/$(basename $target .fasta_lines.tmp ).filtered.fasta > $target.build &&
+	done < $(dirname $target)/$stem.sequences.list &&
 	mv $target.build $target

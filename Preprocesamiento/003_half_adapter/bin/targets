@@ -1,3 +1,5 @@
 #!/bin/bash
 
-echo "results/preprocessing_summary"
+source ../config.mk
+
+echo "results/$(basename $SRR_FILE .txt).preprocessing_summary.tsv"

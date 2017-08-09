@@ -1,3 +1,0 @@
-#!/bin/bash
-
-ls data/fasta/*.fasta | sed "s#data/fasta#results#g" | sed "s#.filtered.fasta#.counts#g"

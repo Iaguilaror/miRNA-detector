@@ -2,4 +2,8 @@
 
 source ../config.mk
 
-cut -f1 $SRR_FILE | tail -n+2 | sed -e "s#^#results/#g" -e "s#\$#.counts#g"
+BATCH=$(basename $SRR_FILE .txt)
+SEQS=$(basename $SEQUENCES_FILE)
+
+
+cut -f1 $SRR_FILE | grep "^SRR" | sed -e "s#^#results/$BATCH.$SEQS/#g" -e "s#\$#.counts#g"
